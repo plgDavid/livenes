@@ -260,9 +260,9 @@ reset:
     txs        ; Set up stack
     inx        ; now X = 0  
     stx $2000  ; disable NMI
-    stx    PPU2000; cache (also used by FDS)    
+    stx PPU2000; cache (also used by FDS)    
     stx $2001  ; disable rendering
-    stx    PPU2001; cache (also used by FDS)    
+    stx PPU2001; cache (also used by FDS)    
     stx $4010  ; disable DMC IRQs
     
     lda #$0
@@ -398,14 +398,14 @@ ENDIF
     ;no emph, start sprites, backgroung and show in borders
     lda #%00011110
     sta $2001
-    sta    PPU2001    ;cache (also used by FDS)    
+    sta PPU2001    ;cache (also used by FDS)    
     
     ;scrolling OFF again
     lda #0
     sta $2005
-    sta    PPU2005H ;cache (also used by FDS)    
+    sta PPU2005H ;cache (also used by FDS)    
     sta $2005
-    sta    PPU2005V ;cache (also used by FDS)    
+    sta PPU2005V ;cache (also used by FDS)    
     
     lda #1
     sta initdone;
