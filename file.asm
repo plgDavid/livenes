@@ -74,7 +74,7 @@ LoadPalettesLoop:
                         ; 2nd time through loop it will load palette+1
                         ; 3rd time through loop it will load palette+2
                         ; etc
-  STA $2007 ;PPUDATA             ; write to PPU
+  STA $2007 ;PPUDATA    ; write to PPU
   INX                   ; X = X + 1
   CPX #$20              ; Compare X to hex $10, decimal 16 - copying 16 bytes = 4 sprites
   BNE LoadPalettesLoop  ; Branch to LoadPalettesLoop if compare was Not Equal to zero
