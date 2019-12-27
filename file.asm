@@ -268,14 +268,7 @@ reset:
     lda #$0
     sta initdone
     
-    ; Set up mapper and jmp to further init code here.
-    
-IFDEF GALMAPPER 
-    ;reset LOW chip through GAL's Q4 (pin18)
-    lda #$EF
-    sta $8000    
-ENDIF
-
+    ; Set up mapper and jmp to further init code here.   
     ; If the user presses Reset during vblank, the PPU may reset
     ; with the vblank flag still true.  This has about a 1 in 13
     ; chance of happening on NTSC or 2 in 9 on PAL.  Clear the
@@ -325,13 +318,7 @@ ENDIF
 @vblankwait2:
     bit $2002
     bpl @vblankwait2
-    
-IFDEF GALMAPPER
-    ;lift up reset chip through GAL's Q4 (pin18)
-    lda #$FF
-    sta $8000        
-ENDIF
-    
+      
     lda #$80
     sta $2000 ;PPUCTRL
     sta cur_nametable
@@ -389,7 +376,7 @@ ENDIF
     jsr RP2A03_ch_print1
     jsr RP2A03_ch_print2
     jsr RP2A03_ch_print3    
-     jsr RP2A03_set_attributes
+    jsr RP2A03_set_attributes
     jsr RP2A03_set_cur    
     jsr cur_write_all_shadows    
     jsr cur_draw_all_regs     
@@ -401,7 +388,7 @@ ENDIF
     jsr ALTERNATE_ch_print1
     jsr ALTERNATE_ch_print2
     jsr ALTERNATE_ch_print3    
-     jsr ALTERNATE_set_attributes    
+    jsr ALTERNATE_set_attributes    
     jsr ALTERNATE_set_cur
     jsr cur_write_all_shadows        
     jsr ALTERNATE_extra_init
@@ -690,124 +677,7 @@ IFNDEF FDS
 ;3)For $F000, fill $4012 with $C0,$C1, etc
 ;.org $F000
 ;INCLUDE dmcs.asm
-
-IFDEF GALSTM32
-    .org $FF00
-    .db "FCSTM32 live   ",0 ; name
-    .db $FC,$AA,$EE,$01; fake CRC32
-    .db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
-    .db 4 ;prg_blocks
-    .db 0 ;chr_blocks    
-    .db 0 ;flags    
-    .db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
-    .db "F051   ",0; just use the datasheet and figure it out mate!                
-    .db $4D,$4F,$1B,$00  ; 1.789773MHz (uint32_t) weird xtal on proto    
-    .dw $0001 ; channel mask (only right)        
-    .dw $5000 ; audio   adress
-    .dw $8000 ; banking adress    
-    .dw $8000 ; reset adress
-    .db $FF   ; reset inactive
-    .db $EF   ; reset active    
-ENDIF
     
-IFDEF GALSID
-    .org $FF00
-    .db "FCSID v2 live  ",0 ; name
-    .db $FC,$AA,$EE,$01; fake CRC32
-    .db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
-    .db 4 ;prg_blocks
-    .db 0 ;chr_blocks    
-    .db 0 ;flags    
-    .db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
-    .db "SID    ",0; just use the datasheet and figure it out mate!            
-    .db $4D,$4F,$1B,$00  ; 1.789773MHz (has to be driven by M2, no choice!)
-    .dw $0002 ; channel mask (only right)        
-    .dw $5000 ; audio   adress
-    .dw $8000 ; banking adress    
-    .dw $8000 ; reset adress
-    .db $FF   ; reset inactive
-    .db $EF   ; reset active
-ENDIF
-
-IFDEF GALDCSG
-    .org $FF00
-    .db "FCDCSG r0 live ",0 ; name
-    .db $FC,$AA,$EE,$01; fake CRC32
-    .db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
-    .db 4 ;prg_blocks
-    .db 0 ;chr_blocks    
-    .db 0 ;flags    
-    .db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
-    .db "DCSG   ",0; just use the datasheet and figure it out mate!            
-    .db $4D,$4F,$1B,$00  ; 1.789773MHz 
-    .dw $0001 ; channel mask
-    .dw $5000 ; audio   adress
-    .dw $8000 ; banking adress    
-    .dw $0000 ; reset adress (none no use!)
-    .db $00   ; reset inactive
-    .db $00   ; reset active
-ENDIF
-
-IFDEF GALOPN2
-    .org $FF00
-    ;FCROM START//////////////////////////////////
-    .db "FCOPN2 r0 live ",0
-    .db $FC,$AA,$EE,$01; fake CRC32
-    .db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
-    .db 4 ;prg_blocks
-    .db 0 ;chr_blocks    
-    .db 0 ;flags    
-    .db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
-    .db "OPN2   ",0; just use the datasheet and figure it out mate!            
-   ;.db $00,$80,$70,$00  ; 7.3728MHz (uint32_t) weird xtal on proto
-   ;.db $00,$30,$75,$00  ; 7.6800MHz (uint32_t) weird xtal on proto
-    .db $00,$12,$7A,$00  ; 8.0000MHz (uint32_t) weird xtal on proto
-    .dw $0002 ; channel mask (only right)        
-    .dw $5000 ; audio   adress
-    .dw $8000 ; banking adress    
-    .dw $8000 ; reset adress
-    .db $FF   ; reset inactive
-    .db $EF   ; reset active
-ENDIF
-
-IFDEF GALOPLL
-    .org $FF00
-    .db "FCOPLLr0 live  ",0
-    .db $FC,$AA,$EE,$01; fake CRC32
-    .db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
-    .db 4 ;prg_blocks
-    .db 0 ;chr_blocks    
-    .db 0 ;flags    
-    .db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
-    .db "OPLL   ",0; just use the datasheet and figure it out mate!                
-    .db $99,$9E,$36,$00  ; 3.579545MHz (uint32_t) 
-    .dw $0002 ; channel mask (only right)        
-    .dw $5000 ; audio   adress
-    .dw $8000 ; banking adress    
-    .dw $8000 ; reset adress
-    .db $FF   ; reset inactive
-    .db $EF   ; reset active
-ENDIF
-            
-IFDEF GALOPL3
-    .org $FF00
-    .db "FCOPL3r0 live  ",0
-    .db $FC,$AA,$EE,$01; fake CRC32
-    .db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
-    .db 4 ;prg_blocks
-    .db 0 ;chr_blocks    
-    .db 0 ;flags    
-    .db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
-    .db "OPL3   ",0; just use the datasheet and figure it out mate!            
-    .db $65,$7A,$DA,$00  ; 14.318181MHz
-    .dw $0002 ; channel mask (only right)        
-    .dw $5000 ; audio   adress
-    .dw $8000 ; banking adress    
-    .dw $8000 ; reset adress
-    .db $FF   ; reset inactive
-    .db $EF   ; reset active
-ENDIF    
-        
     .org $FFFA
     .dw nmihandler,    reset, irqhandler
 ELSE
