@@ -33,11 +33,28 @@ nop
 INCLUDE layout_VRC6.asm
 ENDIF
 
+IFDEF S5B ;Note this is iNES Mapper 69.
+.org $BFF0 ; urgh $10 bytes before
+.db "NES",$1A
+.db $01   ;Size of PRG ROM in 16 KB units
+.db $01   ;Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
+.db $50   ;Flags 6 (VRC6 mapper 69 or $45)
+.db $40   ;Flags 7 (VRC6 mapper 69 or $45)
+.db $00   ;Size of PRG RAM in 8 KB units (Value 0 infers 8 KB for compatibility)
+.db $00   ;Flags 9
+.db $00   ;Flags 10 (unofficial)
+.db 0,0,0,0,0
+.org $C000
+nop
+.org $E010
+INCLUDE layout_S5B.asm
+ENDIF
+
 IFDEF FDS ; mapper "22" note CHRAM MUST also be defined!
 ;.org $BFF0 ; urgh $10 bytes before
 ;.db "FDS",$1A
 ;.db $01  ; number of sides
-;.db 0,0,0,0,0,0,0,0,0,0,0        
+;.db 0,0,0,0,0,0,0,0,0,0,0		
 .org $C000
 INCLUDE layout_FDS.asm
 ENDIF
@@ -60,7 +77,7 @@ attributes:
 palette:
     .db $0F,$2d,$30,$10,  $0F,$30,$11,$31,  $0A,$1A,$2A,$3A,  $07,$11,$27,$37
     .db $0F,$1C,$00,$14,  $31,$02,$10,$3C,  $0F,$1C,$20,$14,  $31,$02,$10,$3C
-    
+	
 LoadPalettes:
   LDA $2002 ;PPUSTATUS read PPU status to reset the high/low latch
   LDA #$3F
@@ -74,7 +91,7 @@ LoadPalettesLoop:
                         ; 2nd time through loop it will load palette+1
                         ; 3rd time through loop it will load palette+2
                         ; etc
-  STA $2007 ;PPUDATA    ; write to PPU
+  STA $2007 ;PPUDATA             ; write to PPU
   INX                   ; X = X + 1
   CPX #$20              ; Compare X to hex $10, decimal 16 - copying 16 bytes = 4 sprites
   BNE LoadPalettesLoop  ; Branch to LoadPalettesLoop if compare was Not Equal to zero
@@ -86,7 +103,7 @@ LoadPalettesLoop:
 INCLUDE joyproc.asm
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 write_vram_until_zero:
     ldy #0
 write_vram_until_zero_loop:
@@ -98,7 +115,7 @@ write_vram_until_zero_loop:
 write_vram_until_zero_quit:
     rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 ;writes x amount of bytes to vram
 write_vram_x:
     ldy #0
@@ -110,7 +127,7 @@ write_vram_x_loop:
     bne write_vram_x_loop
     rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 ;indirect memory->memory copy    
 ;ptr_src: zero page indirect source
 ;ptr_dst: zero page indirect destination
@@ -124,25 +141,25 @@ memcpy_loop:
     bpl memcpy_loop
     rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 ;indirect memory->memory copy    
 ;ptr_src: zero page indirect source
 ;ptr_dst: zero page indirect destination
 ;x   : number of PAGES of 256 BYTES to copy
-memcpyPages:    
-    ldy #$00
+memcpyPages:	
+	ldy #$00
 memcpyLoop:
-    lda (ptr_src),Y
-    sta (ptr_dst),Y 
-    iny
-    bne memcpyLoop
-    inc ptr_src+1
-    inc ptr_dst+1
-    dex
-    bne memcpyPages
-    rts
+	lda (ptr_src),Y
+	sta (ptr_dst),Y 
+	iny
+	bne memcpyLoop
+	inc ptr_src+1
+	inc ptr_dst+1
+	dex
+	bne memcpyPages
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 
 IFDEF CHRRAM
 clear_vram:
@@ -166,7 +183,7 @@ clear_vram_loop:
     bne clear_vram_loop
     rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 load_font:
     lda #font&255
     sta ptr_src
@@ -218,7 +235,7 @@ fontchar_loop:
 ENDIF
    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 RP2A03_set_attributes:
     lda #$23   ;$23C0     sized $0040 (Attribute Table #0)
     sta $2006  ;PPUADDR
@@ -230,9 +247,9 @@ RP2A03_set_attributes:
     sta ptr_src+1
     ldx #$40
     jsr write_vram_x
-    rts
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 ALTERNATE_set_attributes:
     lda #$2F   ;$2FC0     sized $0040 (Attribute Table #0)
     sta $2006  ;PPUADDR
@@ -244,7 +261,7 @@ ALTERNATE_set_attributes:
     sta ptr_src+1
     ldx #$40
     jsr write_vram_x
-    rts
+	rts
 
 
 ;************************************************************************    
@@ -256,19 +273,19 @@ reset:
     cld        ; disable decimal mode
     ldx #$40
     stx $4017  ; disable APU frame IRQ 
-    ldx #$ff
-    txs        ; Set up stack
+	ldx #$ff
+	txs        ; Set up stack
     inx        ; now X = 0  
-    stx $2000  ; disable NMI
-    stx PPU2000; cache (also used by FDS)    
+	stx $2000  ; disable NMI
+	stx	PPU2000; cache (also used by FDS)	
     stx $2001  ; disable rendering
-    stx PPU2001; cache (also used by FDS)    
+	stx	PPU2001; cache (also used by FDS)	
     stx $4010  ; disable DMC IRQs
-    
-    lda #$0
-    sta initdone
-    
-    ; Set up mapper and jmp to further init code here.   
+	
+	lda #$0
+	sta initdone
+	
+    ; Set up mapper and jmp to further init code here.
     ; If the user presses Reset during vblank, the PPU may reset
     ; with the vblank flag still true.  This has about a 1 in 13
     ; chance of happening on NTSC or 2 in 9 on PAL.  Clear the
@@ -289,7 +306,7 @@ reset:
 @clrmem:
     sta $000,x
     sta $100,x
-    ;sta $200,x     (done below in @clearOAM instead)
+    ;sta $200,x	 (done below in @clearOAM instead)
     sta $300,x
     sta $400,x
     sta $500,x
@@ -301,33 +318,33 @@ reset:
     inx
     bne @clrmem
 
-    ; clear OAM by hiding all sprites at #$FF
-    ldx #0
-    lda #$FF
+	; clear OAM by hiding all sprites at #$FF
+	ldx #0
+	lda #$FF
 @clearOAM:
-    sta $200,x
-    inx
-    inx
-    inx
-    inx
-    bne @clearOAM
-    
+	sta $200,x
+	inx
+	inx
+	inx
+	inx
+	bne @clearOAM
+	
     ; Other things you can do between vblank waits are set up audio
     ; or set up other mapper registers.
-    
+	
 @vblankwait2:
     bit $2002
     bpl @vblankwait2
-      
+	
     lda #$80
     sta $2000 ;PPUCTRL
-    sta cur_nametable
-        
-    jsr ALTERNATE_bank_init
-        
+	sta cur_nametable
+		
+	jsr ALTERNATE_bank_init
+		
     jsr LoadPalettes 
-    
-IFDEF CHRRAM        
+	
+IFDEF CHRRAM		
     jsr clear_vram
 
     ;load font base
@@ -335,7 +352,7 @@ IFDEF CHRRAM
     sta $2006  ;PPUADDR
     lda #$00
     sta $2006  ;PPUADDR
-    
+	
     jsr load_font
     
     ;load font offseted (for other bits of color palette trick)
@@ -344,7 +361,7 @@ IFDEF CHRRAM
     lda #$08
     sta $2006  ;PPUADDR
     jsr load_font
-    
+	
     ;Plogue Logo_row0
     lda #$00
     sta $2006  ;PPUADDR
@@ -367,57 +384,57 @@ IFDEF CHRRAM
     lda #ploguelogo_row1/256
     sta ptr_src+1
     ldx #$A0
-    jsr write_vram_x    
-ENDIF    
+    jsr write_vram_x	
+ENDIF	
  
-    ;RP2A03 audio+graphics init
-    jsr RP2A03_fill_shadow_with_defaults   ; only do ONCE        
-    jsr RP2A03_ch_print0
-    jsr RP2A03_ch_print1
-    jsr RP2A03_ch_print2
-    jsr RP2A03_ch_print3    
-    jsr RP2A03_set_attributes
-    jsr RP2A03_set_cur    
-    jsr cur_write_all_shadows    
-    jsr cur_draw_all_regs     
-    jsr ppudraw_all_regs    
-    
-    ;RP2A03(alt) or Mapper
-    jsr ALTERNATE_fill_shadow_with_defaults; only do ONCE    
-    jsr ALTERNATE_ch_print0
-    jsr ALTERNATE_ch_print1
-    jsr ALTERNATE_ch_print2
-    jsr ALTERNATE_ch_print3    
-    jsr ALTERNATE_set_attributes    
-    jsr ALTERNATE_set_cur
-    jsr cur_write_all_shadows        
-    jsr ALTERNATE_extra_init
-    jsr cur_draw_all_regs     
-    jsr ppudraw_all_regs    
+	;RP2A03 audio+graphics init
+	jsr RP2A03_fill_shadow_with_defaults   ; only do ONCE		
+	jsr RP2A03_ch_print0
+	jsr RP2A03_ch_print1
+	jsr RP2A03_ch_print2
+	jsr RP2A03_ch_print3	
+ 	jsr RP2A03_set_attributes
+	jsr RP2A03_set_cur	
+	jsr cur_write_all_shadows	
+	jsr cur_draw_all_regs	 
+	jsr ppudraw_all_regs	
+	
+	;RP2A03(alt) or Mapper
+	jsr ALTERNATE_fill_shadow_with_defaults; only do ONCE	
+	jsr ALTERNATE_ch_print0
+	jsr ALTERNATE_ch_print1
+	jsr ALTERNATE_ch_print2
+	jsr ALTERNATE_ch_print3	
+ 	jsr ALTERNATE_set_attributes	
+	jsr ALTERNATE_set_cur
+	jsr cur_write_all_shadows		
+	jsr ALTERNATE_extra_init
+	jsr cur_draw_all_regs	 
+	jsr ppudraw_all_regs	
 
     ;no emph, start sprites, backgroung and show in borders
     lda #%00011110
     sta $2001
-    sta PPU2001    ;cache (also used by FDS)    
-    
-    ;scrolling OFF again
+	sta	PPU2001	;cache (also used by FDS)	
+	
+	;scrolling OFF again
     lda #0
     sta $2005
-    sta PPU2005H ;cache (also used by FDS)    
+	sta	PPU2005H ;cache (also used by FDS)	
     sta $2005
-    sta PPU2005V ;cache (also used by FDS)    
-    
+	sta	PPU2005V ;cache (also used by FDS)	
+	
     lda #1
     sta initdone;
     sta cur_set;yes there was a double click bug before
-    
+	
 main_loop:    
     jsr WaitFrame
     jsr ScanButtons        
-    jsr update_cursor_sprite
+	jsr update_cursor_sprite
     jmp main_loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	    
 ;; WaitFrame - waits for VBlank, returns after NMI handler is done
 WaitFrame:
 inc sleeping
@@ -426,49 +443,59 @@ inc sleeping
   bne @loop
 rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;      
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 ;trashes a and x
+IFDEF S5BREGISTERS
+write_pair:	
+	lda write_pair_reg
+	sta $C000
+	lda write_pair_val
+	sta $E000	
+	rts
+ELSE
 write_pair:
-    
-    lda write_pair_reg
-    asl
-    tax
-    
-    lda write_pair_val
-    sta (cur_reg_table,x)
-    
-    rts
+	
+	lda write_pair_reg
+	asl
+	tax
+	
+	lda write_pair_val
+	sta (cur_reg_table,x)
+	
+	rts
+ENDIF
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;         
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 	
 ; this is always done, whether or not we have an extra mapper!
-cur_write_all_shadows    
-    ldy #0    
+cur_write_all_shadows	
+    ldy #0	
 shadowloop:  
     lda (cur_shadow_ptr),y
+	
+	sty write_pair_reg	
+	sta write_pair_val
+	jsr write_pair
     
-    sty write_pair_reg    
-    sta write_pair_val
-    jsr write_pair
-    
-    iny
+	iny
     cpy cur_num_regs
     bne shadowloop
 
-    rts    
+	rts	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;         
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 	
 ;Draws register in cur_ramdrawreg into a temporary screen location until PPU NMI
 ;Actually displays it using ppudrawreg trashes A and Y
 ramdrawreg:    
     ;putting the current register value in a variable:
     ;temp0 = soundbank0[x]
-    ldy ramdrawreg_arg0    
+	ldy ramdrawreg_arg0	
     lda (cur_shadow_ptr),y
     sta tempA
-    ; get proper string adress by multiplying x by 8 (using 3 shifts)    
+    ; get proper string address by multiplying x by 8 (using 3 shifts)    
     tya
     asl
     asl
@@ -484,14 +511,14 @@ ramdrawreg_loop:
     and #$80 ;testing high bit
     beq ramdrawreg_bitnotset;
     lda (cur_reg_bits_ptr),y
-    adc #$60 ; adding 60 which is the highlighed font offset
+    adc #$60 ; adding 60 which is the highlighted font offset
     sta screentemp,y
     jmp ramdrawreg_next
 ramdrawreg_bitnotset:    ; copy directly
     lda (cur_reg_bits_ptr),y
     sta screentemp,y
 ramdrawreg_next:    
-    ;get next bit    
+    ;get next bit	
     lda tempA
     asl
     sta tempA
@@ -500,27 +527,27 @@ ramdrawreg_next:
     iny ; y++
     cpx #$8
     bne ramdrawreg_loop    
-    ldx temp2
-    rts    
+	ldx temp2
+    rts	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 ;drawing all registers, call this on init or when changing bank
 cur_draw_all_regs:
     ldx cur_num_regs
 cur_drawallregs_loop:        
     
-    stx ramdrawreg_arg0    
-    jsr ramdrawreg ; thrashes ALL regs!
+	stx ramdrawreg_arg0    
+	jsr ramdrawreg ; thrashes ALL regs!
     ldx ramdrawreg_arg0
     
-    dex
+	dex
     bne cur_drawallregs_loop
     ;and... the last one (entry 0)        
     stx ramdrawreg_arg0        
     jsr ramdrawreg    ; thrashes ALL regs!
-    rts    
+    rts	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 ;;needed register MUST be in y
 ppudrawreg:
     lda (cur_regHtbl),y
@@ -554,41 +581,41 @@ ppudrawreg:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ppudraw_all_regs
-    ldy cur_num_regs
-    dey
-ppudraw_all_regs_loop:    
+	ldy cur_num_regs
+	dey
+ppudraw_all_regs_loop:	
     jsr ppudrawreg  
-    dey
-    bne ppudraw_all_regs_loop
-    jsr ppudrawreg  ;last time    
-    rts
+	dey
+	bne ppudraw_all_regs_loop
+	jsr ppudrawreg  ;last time	
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;     
-swap_register_set:    
-    lda cur_set
-    beq do_set_alternate    
-    jsr RP2A03_set_cur        
-    lda #0
-    sta cur_set
-    lda #$80
-    sta cur_nametable
-    jmp swap_end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
+swap_register_set:	
+	lda cur_set
+	beq do_set_alternate	
+	jsr RP2A03_set_cur		
+	lda #0
+	sta cur_set
+	lda #$80
+	sta cur_nametable
+	jmp swap_end
 do_set_alternate:
-    jsr ALTERNATE_set_cur        
-    lda #$1
-    sta cur_set
-    lda #$83
-    sta cur_nametable    
+	jsr ALTERNATE_set_cur		
+	lda #$1
+	sta cur_set
+	lda #$83
+	sta cur_nametable	
 swap_end:
-    jsr cur_draw_all_regs; will be done after whole screen redraw
-    rts
+	jsr cur_draw_all_regs; will be done after whole screen redraw
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 ;http://wiki.nesdev.com/w/index.php/The_frame_and_NMIs
 ;The CPU can load graphics data into the PPU only during this rest period. 
 ;From NMI to the end of the pre-render scanline, the NTSC NES PPU stays off the bus for 2273 cycles
 nmihandler:
-    php
+	php
     pha
     txa
     pha
@@ -597,29 +624,29 @@ nmihandler:
   
     bit $2002 ; clear VBl flag, reset $2005/$2006 toggle
 
-    ;jmp nmidone
+	;jmp nmidone
     lda initdone
     beq notready
  
-    lda cur_nametable
+	lda cur_nametable
     sta $2000
-    
-    ldy cur_reg
+	
+	ldy cur_reg
     jsr ppudrawreg 
 
 IFDEF FDS
-    ;why again in case MAIN didnt set it in time??
-    jsr    ALTERNATE_bank_init
+	;why again in case MAIN didnt set it in time??
+	jsr	ALTERNATE_bank_init
 ENDIF
-        
-    lda    PPU2005H
-    sta    $2005
-    lda    PPU2005V
-    sta    $2005
-    
+		
+	lda	PPU2005H
+	sta	$2005
+	lda	PPU2005V
+	sta	$2005
+	
 notready:
     
-    ;out sprite0 handling ... needs to be timed for correct flashes
+	;out sprite0 handling ... needs to be timed for correct flashes
     lda spriteY  ; load  Y value
     sta oam      ; store Y value
     lda #$BF     ; define sprite's tile number
@@ -631,20 +658,20 @@ notready:
     lsr 
     lsr
     sta oam+2    ; store palete and stuff
-    lda spriteColor     ; Attributes
-    adc #1
-    and #$3F
+	lda spriteColor     ; Attributes
+	adc #1
+	and #$3F
     sta spriteColor
-        
+		
     lda spriteX  ; load  X value
-    sta oam+3    ; store X value    
-    
-    ;sprite DMAs (for ALL sprites)
+    sta oam+3    ; store X value	
+	
+	;sprite DMAs (for ALL sprites)
     lda #0      ; do sprite DMA
     sta $2003   ; conditional via the 'needdma' flag
     lda #>oam
     sta $4014
-      
+	  
 nmidone:      
     lda #0       ;; clear the sleeping flag so that WaitFrame will exit
     sta sleeping ;; note that you should not 'dec' here, as sleeping might
@@ -655,20 +682,20 @@ nmidone:
     pla
     tax
     pla
-    plp    
+	plp	
     rti
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	    
 irqhandler:
     rti
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;       
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	   
 IFDEF CHRRAM  
 INCLUDE bitmaps.asm
 ENDIF
 
 
-IFNDEF FDS    
+IFNDEF FDS	
 ;include some test DMC's (2016). DPCM samples must:
 ;Started with $C000 + (A * 64) SO
 ;1)begin in the memory range $C000-FFFF 
@@ -677,17 +704,17 @@ IFNDEF FDS
 ;3)For $F000, fill $4012 with $C0,$C1, etc
 ;.org $F000
 ;INCLUDE dmcs.asm
-    
-    .org $FFFA
-    .dw nmihandler,    reset, irqhandler
+	
+	.org $FFFA
+    .dw nmihandler,	reset, irqhandler
 ELSE
-    .pad $DFF6    
-    .dw nmihandler
-    .dw nmihandler
-    .dw nmihandler
-    .dw reset
-    .dw irqhandler    
-    .pad $1BEA0
+	.pad $DFF6	
+	.dw nmihandler
+	.dw nmihandler
+	.dw nmihandler
+	.dw reset
+	.dw irqhandler	
+	.pad $1BEA0
 ENDIF
 
 ; for mappers with CHRs...
