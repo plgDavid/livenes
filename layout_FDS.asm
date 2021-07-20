@@ -55,7 +55,7 @@ FDS_ch0:    .db "                                "     ;$2C00
             .db "                    "     ;$2C40        
             .db "  "
             .db $11,$12,$13,$14,$15,$16,$17,$18,$19,$1A; logorow1 
-            .db "livenes FDS  06/2016"     ;$2C60      
+            .db "livenes FDS  07/2021"     ;$2C60      
             .db "                                "     ;$2C80            
             .db "        Car             Mod     "     ;$2CA0    
             .db "                                "     ;$2CC0            
