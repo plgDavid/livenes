@@ -17,7 +17,7 @@ loop:
        ;; either or both bits are set.
        lda $4016
        and #$03
-       cmp #$01
+       cmp #$01 ; should be 3 for HVC-053?
         
        ;; Now, rotate the carry flag into the top of A,
        ;; land shift all the other buttons to the right
