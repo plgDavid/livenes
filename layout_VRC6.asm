@@ -54,7 +54,7 @@ VRC6_ch0:   .db "                                "     ;$2C00
             .db "                    "     ;$2C40        
             .db "  "
             .db $11,$12,$13,$14,$15,$16,$17,$18,$19,$1A; logorow1 
-            .db "livenes VRC6 10/2016"     ;$2C60      
+		.db "livenes VRC6 07/2021"     ;$2C60      
             .db "                                "     ;$2C80            
             .db "        Pulse1          Pulse2  "     ;$2CA0    
             .db "                                "     ;$2CC0            
@@ -280,4 +280,8 @@ ALTERNATE_bank_init:
     sta $D003;CHR $0C00-$0FFF: 1 KB switchable CHR ROM bank    
 
     rts
-    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+ALTERNATE_write:
+	jsr write_2a03 
+	rts
