@@ -45,7 +45,7 @@ IFDEF S5B ;Note this is iNES Mapper 69.
 .db $00   ;Flags 10 (unofficial)
 .db 0,0,0,0,0
 .org $C000
-nop
+nop ; we are NOT using C000:DFFF
 .org $E010
 INCLUDE layout_S5B.asm
 ENDIF
@@ -444,30 +444,19 @@ inc sleeping
 rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
 ;trashes a and x
-IFDEF S5BREGISTERS
 write_pair:	
-	lda write_pair_reg
-	sta $C000
-	lda write_pair_val
-	sta $E000	
+	lda cur_set
+	beq write_2a03
+	jsr ALTERNATE_write
 	rts
-ELSE
-write_pair:
-	
+write_2a03:
 	lda write_pair_reg
 	asl
 	tax
-	
 	lda write_pair_val
 	sta (cur_reg_table,x)
-	
 	rts
-ENDIF
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 	
 ; this is always done, whether or not we have an extra mapper!
