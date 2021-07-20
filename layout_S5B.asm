@@ -56,7 +56,7 @@ S5B_ch0: .db "                                "     ;$2C00
 			.db "                    "     ;$2C40        
 			.db "  "
 			.db $11,$12,$13,$14,$15,$16,$17,$18,$19,$1A; logorow1 
-			.db "livenes S5B  12/2020"     ;$2C60      
+			.db "livenes S5B  07/2021"     ;$2C60      
 			.db "                                "     ;$2C80            
 			.db "        Freq            Ctrl    "     ;$2CA0    
 			.db "                                "     ;$2CC0            
