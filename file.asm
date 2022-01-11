@@ -33,6 +33,42 @@ nop
 INCLUDE layout_VRC6.asm
 ENDIF
 
+IFDEF GALMAPPER ;my OWN mapper (various sub mappers)
+.org $BFF0 ; urgh $10 bytes before
+.db "NES",$1A
+.db $01   ;Size of PRG ROM in 16 KB units
+.db $00   ;Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
+.db $20   ;Flags 6 (UNROM) its BNROM but liveness does not change bank https://wiki.nesdev.com/w/index.php/BNROM
+.db $00   ;Flags 7 (UNROM)
+.db $00   ;Size of PRG RAM in 8 KB units (Value 0 infers 8 KB for compatibility)
+.db $00   ;Flags 9
+.db $00   ;Flags 10 (unofficial)
+.db 0,0,0,0,0
+.org $C000
+nop
+.org $E010
+	IFDEF GALSID
+	INCLUDE layout_GALSID.asm
+	ENDIF
+	IFDEF GALDCSG
+	INCLUDE layout_GALDCSG.asm
+	ENDIF	
+	IFDEF GALSTM32
+	INCLUDE layout_GALSTM32.asm
+	ENDIF
+	IFDEF GALOPN2
+	INCLUDE layout_GALOPN2.asm
+	ENDIF
+	IFDEF GALOPLL
+	INCLUDE layout_GALOPLL.asm
+	ENDIF
+	IFDEF GALOPL3
+	INCLUDE layout_GALOPL3.asm
+	ENDIF	
+ENDIF
+
+
+
 IFDEF S5B ;Note this is iNES Mapper 69.
 .org $BFF0 ; urgh $10 bytes before
 .db "NES",$1A
@@ -75,7 +111,7 @@ attributes:
 
 ;same pallete for all screens on all mappers
 palette:
-    .db $0F,$2d,$30,$10,  $0F,$30,$11,$31,  $0A,$1A,$2A,$3A,  $07,$11,$27,$37
+    .db $0F,$2d,$30,$10,  $0F,$30,$11,$31,  $0A,$1A,$2A,$3A,  $07,$11,$31,$37
     .db $0F,$1C,$00,$14,  $31,$02,$10,$3C,  $0F,$1C,$20,$14,  $31,$02,$10,$3C
 	
 LoadPalettes:
@@ -233,7 +269,6 @@ fontchar_loop:
     bne fontchar_loop
     rts
 ENDIF
-   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 RP2A03_set_attributes:
@@ -262,8 +297,6 @@ ALTERNATE_set_attributes:
     ldx #$40
     jsr write_vram_x
 	rts
-
-
 ;************************************************************************    
 ;****************** Main Entry Point!!! *********************************
 ;************************************************************************    
@@ -271,8 +304,10 @@ ALTERNATE_set_attributes:
 reset:
     sei        ; ignore IRQs
     cld        ; disable decimal mode
+IFNDEF INIT_2A03
     ldx #$40
     stx $4017  ; disable APU frame IRQ 
+ENDIF
 	ldx #$ff
 	txs        ; Set up stack
     inx        ; now X = 0  
@@ -280,12 +315,20 @@ reset:
 	stx	PPU2000; cache (also used by FDS)	
     stx $2001  ; disable rendering
 	stx	PPU2001; cache (also used by FDS)	
+IFNDEF INIT_2A03
     stx $4010  ; disable DMC IRQs
-	
+ENDIF
 	lda #$0
 	sta initdone
 	
     ; Set up mapper and jmp to further init code here.
+	
+IFDEF GALMAPPER 
+	;reset LOW chip through GAL's Q4 (pin18)
+	lda #$EF
+	sta $8000	
+ENDIF
+
     ; If the user presses Reset during vblank, the PPU may reset
     ; with the vblank flag still true.  This has about a 1 in 13
     ; chance of happening on NTSC or 2 in 9 on PAL.  Clear the
@@ -335,6 +378,12 @@ reset:
 @vblankwait2:
     bit $2002
     bpl @vblankwait2
+	
+IFDEF GALMAPPER
+	;lift up reset chip through GAL's Q4 (pin18)
+	lda #$FF
+	sta $8000		
+ENDIF
 	
     lda #$80
     sta $2000 ;PPUCTRL
@@ -394,8 +443,10 @@ ENDIF
 	jsr RP2A03_ch_print2
 	jsr RP2A03_ch_print3	
  	jsr RP2A03_set_attributes
-	jsr RP2A03_set_cur	
+	jsr RP2A03_set_cur
+IFNDEF INIT_2A03
 	jsr cur_write_all_shadows	
+ENDIF	
 	jsr cur_draw_all_regs	 
 	jsr ppudraw_all_regs	
 	
@@ -407,7 +458,9 @@ ENDIF
 	jsr ALTERNATE_ch_print3	
  	jsr ALTERNATE_set_attributes	
 	jsr ALTERNATE_set_cur
+IFNDEF INIT_2A03
 	jsr cur_write_all_shadows		
+ENDIF
 	jsr ALTERNATE_extra_init
 	jsr cur_draw_all_regs	 
 	jsr ppudraw_all_regs	
@@ -430,20 +483,36 @@ ENDIF
 	
 main_loop:    
     jsr WaitFrame
-    jsr ScanButtons        
+    jsr ScanButtons    
 	jsr update_cursor_sprite
+	jsr update_4015
     jmp main_loop
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	    
 ;; WaitFrame - waits for VBlank, returns after NMI handler is done
 WaitFrame:
-inc sleeping
+	inc sleeping
 @loop:
-  lda sleeping
-  bne @loop
-rts
+	lda sleeping
+	bne @loop
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
+update_4015:
+	lda $4015
+	cmp last_read_4015 ; should be zero on boot
+	sta last_read_4015
+	beq update_4015_end
+update_4015_diff:
+	lda #$15
+	sta cur_reg
+	tay
+	lda last_read_4015
+	jsr ramdrawreg
+update_4015_end:
+	rts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	     
 ;trashes a and x
 write_pair:	
 	lda cur_set
@@ -476,20 +545,18 @@ shadowloop:
 	rts	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 	
-;Draws register in cur_ramdrawreg into a temporary screen location until PPU NMI
-;Actually displays it using ppudrawreg trashes A and Y
+;Draws register in Y into a temporary screen location until PPU NMI
+;Actually displays it using ppudrawreg.
+;A should contain the value to draw
+;Y should contain the register id to draw
 ramdrawreg:    
-    ;putting the current register value in a variable:
-    ;temp0 = soundbank0[x]
-	ldy ramdrawreg_arg0	
-    lda (cur_shadow_ptr),y
-    sta tempA
-    ; get proper string address by multiplying x by 8 (using 3 shifts)    
+    sta tempA       ;making a backup (could use stack)
+    ; get proper string address by multiplying y by 8 (using 3 shifts)    
     tya
     asl
     asl
     asl 
-    tay; x contains the memory offset to reg_bits
+    tay; y contains the memory offset to reg_bits
     
     ;for (uint8_t y=0;y<8;y++){
     ldx #$0
@@ -522,17 +589,18 @@ ramdrawreg_next:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	 
 ;drawing all registers, call this on init or when changing bank
 cur_draw_all_regs:
-    ldx cur_num_regs
+    ldy cur_num_regs
 cur_drawallregs_loop:        
-    
-	stx ramdrawreg_arg0    
+    sty ramdrawreg_temp
+    lda (cur_shadow_ptr),y		
 	jsr ramdrawreg ; thrashes ALL regs!
-    ldx ramdrawreg_arg0
+    ldy ramdrawreg_temp
     
-	dex
+	dey
     bne cur_drawallregs_loop
     ;and... the last one (entry 0)        
-    stx ramdrawreg_arg0        
+    sty ramdrawreg_temp      
+	lda (cur_shadow_ptr),y	
     jsr ramdrawreg    ; thrashes ALL regs!
     rts	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -694,6 +762,123 @@ IFNDEF FDS
 ;.org $F000
 ;INCLUDE dmcs.asm
 	
+IFDEF GALSTM32
+	.org $FF00
+	.db "FCSTM32 live   ",0 ; name
+	.db $FC,$AA,$EE,$01; fake CRC32
+	.db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
+	.db 4 ;prg_blocks
+	.db 0 ;chr_blocks	
+	.db 0 ;flags	
+	.db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
+	.db "F051C  ",0; 		
+	.db $4D,$4F,$1B,$00  ; 1.789773MHz (uint32_t) weird xtal on proto	
+	.dw $0001 ; channel mask (only right)		
+	.dw $5000 ; audio   address
+	.dw $8000 ; banking address	
+	.dw $8000 ; reset address
+	.db $FF   ; reset inactive
+	.db $EF   ; reset active	
+ENDIF
+	
+IFDEF GALSID
+	.org $FF00
+	.db "FCSID v2 live  ",0 ; name
+	.db $FC,$AA,$EE,$01; fake CRC32
+	.db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
+	.db 4 ;prg_blocks
+	.db 0 ;chr_blocks	
+	.db 0 ;flags	
+	.db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
+	.db "SID    ",0; just use the datasheet and figure it out mate!			
+	.db $4D,$4F,$1B,$00  ; 1.789773MHz (has to be driven by M2, no choice!)
+	.dw $0002 ; channel mask (only right)		
+	.dw $5000 ; audio   address
+	.dw $8000 ; banking address	
+	.dw $8000 ; reset address
+	.db $FF   ; reset inactive
+	.db $EF   ; reset active
+ENDIF
+
+IFDEF GALDCSG
+	.org $FF00
+	.db "FCDCSG r0 live ",0 ; name
+	.db $FC,$AA,$EE,$01; fake CRC32
+	.db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
+	.db 4 ;prg_blocks
+	.db 0 ;chr_blocks	
+	.db 0 ;flags	
+	.db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
+	.db "DCSG   ",0; just use the datasheet and figure it out mate!			
+	.db $4D,$4F,$1B,$00  ; 1.789773MHz 
+	.dw $0001 ; channel mask
+	.dw $5000 ; audio   adress
+	.dw $8000 ; banking adress	
+	.dw $0000 ; reset adress (none no use!)
+	.db $00   ; reset inactive
+	.db $00   ; reset active
+ENDIF
+
+IFDEF GALOPN2
+	.org $FF00
+	;FCROM START//////////////////////////////////
+	.db "FCOPN2 r0 live ",0
+	.db $FC,$AA,$EE,$01; fake CRC32
+	.db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
+	.db 4 ;prg_blocks
+	.db 0 ;chr_blocks	
+	.db 0 ;flags	
+	.db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
+	.db "OPN2   ",0; just use the datasheet and figure it out mate!			
+   ;.db $00,$80,$70,$00  ; 7.3728MHz (uint32_t) weird xtal on proto
+   ;.db $00,$30,$75,$00  ; 7.6800MHz (uint32_t) weird xtal on proto
+	.db $00,$12,$7A,$00  ; 8.0000MHz (uint32_t) weird xtal on proto
+	.dw $0002 ; channel mask (only right)		
+	.dw $5000 ; audio   address
+	.dw $8000 ; banking address	
+	.dw $8000 ; reset   address
+	.db $FF   ; reset inactive
+	.db $EF   ; reset active
+ENDIF
+
+IFDEF GALOPLL
+	.org $FF00
+	.db "FCOPLLr0 live  ",0
+	.db $FC,$AA,$EE,$01; fake CRC32
+	.db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
+	.db 4 ;prg_blocks
+	.db 0 ;chr_blocks	
+	.db 0 ;flags	
+	.db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
+	.db "OPLL   ",0; just use the datasheet and figure it out mate!				
+	.db $99,$9E,$36,$00  ; 3.579545MHz (uint32_t) 
+	.dw $0002 ; channel mask (only right)		
+	.dw $5000 ; audio   address
+	.dw $8000 ; banking address	
+	.dw $8000 ; reset   address
+	.db $FF   ; reset inactive
+	.db $EF   ; reset active
+ENDIF
+			
+IFDEF GALOPL3
+	.org $FF00
+	.db "FCOPL3r0 live  ",0
+	.db $FC,$AA,$EE,$01; fake CRC32
+	.db 34 ;https://wiki.nesdev.com/w/index.php/BNROM
+	.db 4 ;prg_blocks
+	.db 0 ;chr_blocks	
+	.db 0 ;flags	
+	.db 0,0,0,0,0,0,0,0 ;32bit pointers (arm)
+	.db "OPL3   ",0; just use the datasheet and figure it out mate!			
+	.db $65,$7A,$DA,$00  ; 14.318181MHz
+	.dw $0002 ; channel mask (only right)		
+	.dw $5000 ; audio   address
+	.dw $8000 ; banking address	
+	.dw $8000 ; reset   address
+	.db $FF   ; reset inactive
+	.db $EF   ; reset active
+ENDIF	
+		
 	.org $FFFA
     .dw nmihandler,	reset, irqhandler
 ELSE

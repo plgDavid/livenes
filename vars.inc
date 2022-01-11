@@ -22,13 +22,16 @@ cur_row_to_reg_col1=$1E
 RP2A03_shadow   = $20 ; ALWAYS there
 ALTERNATE_shadow= $40 ; VRC6/MMC5/FDS/SB5/N163 and second RP2A03 uses that
 
-cur_shadow_ptr      = $60
+cur_shadow_ptr  = $60
 ;//$61
-;// fill this before calling ramdrawreg
-ramdrawreg_arg0  = $62
+
+ramdrawreg_temp  = $62
 tempA            = $63
+
 write_pair_reg = $64
 write_pair_val = $65
+
+last_read_4015 = $66
 
 ; memcpy
 ptr_src        = $70

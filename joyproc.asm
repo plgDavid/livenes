@@ -107,43 +107,43 @@ CheckButtonsDone:
 ;joystick handling
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JOYA_NEW_ON:
-    ldy cur_reg
-    lda (cur_shadow_ptr),y
-    and selected_bit
-    beq BITWASOFF
-    ;remove bit
-    lda (cur_shadow_ptr),y
-    eor selected_bit
-    sta (cur_shadow_ptr),y
+	ldy cur_reg
+	lda (cur_shadow_ptr),y
+	and selected_bit
+	beq BITWASOFF
+	;remove bit
+	lda (cur_shadow_ptr),y
+	eor selected_bit
+	sta (cur_shadow_ptr),y
 
-    sty write_pair_reg
-    sta write_pair_val    
-    jsr write_pair
+	sty write_pair_reg
+	sta write_pair_val	
+	jsr write_pair
 
-    jmp JOYA_DRAW
+	jmp JOYA_DRAW
 BITWASOFF:
     ;add bit
-    lda (cur_shadow_ptr),y
-    ora selected_bit
-    sta (cur_shadow_ptr),y
-    sty write_pair_reg
-    sta write_pair_val    
-    jsr write_pair
-JOYA_DRAW:    
-    sty ramdrawreg_arg0
+	lda (cur_shadow_ptr),y
+	ora selected_bit
+	sta (cur_shadow_ptr),y
+	sty write_pair_reg
+	sta write_pair_val	
+	jsr write_pair
+JOYA_DRAW:	
+    lda (cur_shadow_ptr),y	
     jsr ramdrawreg;
-JOYA_ON_OLD:    
-    rts    
+JOYA_ON_OLD:	
+    rts	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JOYB_NEW_ON:  ; just write current value again (no change)
-    ldy cur_reg
-    sty write_pair_reg
-    lda (cur_shadow_ptr),y
-    sta write_pair_val    
-    jsr write_pair
+	ldy cur_reg
+	sty write_pair_reg
+	lda (cur_shadow_ptr),y
+	sta write_pair_val	
+	jsr write_pair
 JOYB_OLD_ON:
     rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -151,234 +151,234 @@ JOYB_OLD_ON:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JOYSEL_NEW_ON:
-    jsr swap_register_set
-    rts
+	jsr swap_register_set
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JOYSEL_OLD_ON:
-    rts
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JOYSTART_NEW_ON:
-    jsr reset
-    rts
+	jsr reset
+	rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 JOYSTART_OLD_ON:
-    rts 
+	rts 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 decrementY:
-    lda cursorY
-    beq decrementYnegative        
-    dec cursorY
-    jmp decrementYDone            
+	lda cursorY
+	beq decrementYnegative		
+	dec cursorY
+	jmp decrementYDone			
 decrementYnegative
     lda #$F
-    sta cursorY
-decrementYDone:    
+	sta cursorY
+decrementYDone:	
     rts 
 
-JOYUP_NEW_ON:    
-    lda #0
-    sta posaccum    
-    jsr decrementY
-    jmp JOYUP_DONE    
+JOYUP_NEW_ON:	
+	lda #0
+	sta posaccum	
+	jsr decrementY
+	jmp JOYUP_DONE	
 JOYUP_OLD_ON:
     inc posaccum  
     lda posaccum
-    and #$8
-    beq JOYUP_DONE
-    lda #0
-    sta posaccum
-    jsr decrementY 
+	and #$8
+	beq JOYUP_DONE
+	lda #0
+	sta posaccum
+	jsr decrementY 
 JOYUP_DONE:
    rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 decrementX:
-    lda cursorX
-    beq decrementXnegative        
-    dec cursorX
-    jmp decrementXDone            
+	lda cursorX
+	beq decrementXnegative		
+	dec cursorX
+	jmp decrementXDone			
 decrementXnegative
     lda #$F
-    sta cursorX    
-decrementXDone:    
+	sta cursorX	
+decrementXDone:	
     rts 
-    
-JOYLEFT_NEW_ON:    
-    lda #0
-    sta posaccum    
-    jsr decrementX
-    jmp JOYLEFT_DONE        
-JOYLEFT_OLD_ON:        
+	
+JOYLEFT_NEW_ON:	
+	lda #0
+	sta posaccum	
+	jsr decrementX
+	jmp JOYLEFT_DONE		
+JOYLEFT_OLD_ON:		
     inc posaccum  
     lda posaccum
-    and #$8
-    beq JOYLEFT_DONE
-    lda #0
-    sta posaccum
-    jsr decrementX
+	and #$8
+	beq JOYLEFT_DONE
+	lda #0
+	sta posaccum
+	jsr decrementX
 JOYLEFT_DONE:
    rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 incrementY:
-    inc cursorY 
-    lda cursorY        
-    cmp selectedCOLH
+	inc cursorY 
+	lda cursorY		
+	cmp selectedCOLH
     bpl clampYNOW
-    jmp incrementYend
+	jmp incrementYend
 clampYNOW:
-    lda #$0    
-    sta cursorY    
-incrementYend:    
+    lda #$0	
+	sta cursorY	
+incrementYend:	
     rts
 
 JOYDOWN_NEW_ON:
-    lda #0
-    sta posaccum
-    jsr incrementY
-    jmp JOYDOWN_DONE    
+	lda #0
+	sta posaccum
+	jsr incrementY
+	jmp JOYDOWN_DONE	
 JOYDOWN_OLD_ON:
     inc posaccum  
     lda posaccum
-    and #$8
-    beq JOYDOWN_DONE
-    lda #0
-    sta posaccum
-    jsr incrementY
+	and #$8
+	beq JOYDOWN_DONE
+	lda #0
+	sta posaccum
+	jsr incrementY
 JOYDOWN_DONE:
    rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 incrementX:
-    inc cursorX 
-    lda cursorX
-    and #$F   ; quantise
-    sta cursorX    
+	inc cursorX 
+	lda cursorX
+	and #$F   ; quantise
+	sta cursorX	
     rts
 
 JOYRIGHT_NEW_ON:
-    lda #0
-    sta posaccum
+	lda #0
+	sta posaccum
     jsr incrementX
-    jmp JOYRIGHT_DONE        
-JOYRIGHT_OLD_ON:    
+	jmp JOYRIGHT_DONE		
+JOYRIGHT_OLD_ON:	
     inc posaccum  
     lda posaccum
-    and #$8
-    beq JOYRIGHT_DONE
-    lda #0
-    sta posaccum
-    jsr incrementX
+	and #$8
+	beq JOYRIGHT_DONE
+	lda #0
+	sta posaccum
+	jsr incrementX
 JOYRIGHT_DONE:
    rts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 coltbl:    ; sprite x positions
     .db $40,$48,$50,$58,$60,$68,$70,$78
-    .db $C0,$C8,$D0,$D8,$E0,$E8,$F0,$F8
+	.db $C0,$C8,$D0,$D8,$E0,$E8,$F0,$F8
 colbit:    ; highlighed bit value (for potential ORing)
     .db $80,$40,$20,$10,$08,$04,$02,$01
-    .db $80,$40,$20,$10,$08,$04,$02,$01
-        
+	.db $80,$40,$20,$10,$08,$04,$02,$01
+		
 update_cursor_sprite:
     lda cursorX
-    ;translate col to actual spot -> table
-    tax ; keep index in X
-    lsr
-    lsr
-    lsr
-    sta selectedCOL  ;[0:1]        
-    lda coltbl,x
-    sta spriteX      ; sprite X position on screen
-    lda colbit,x
-    sta selected_bit  ; value of the current bit (0x80,0x40,...,0x01)
-    
-    ;translate ROW to actual spot -> table
-    lda selectedCOL
-    beq regFromCOL0
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+	;translate col to actual spot -> table
+	tax ; keep index in X
+	lsr
+	lsr
+	lsr
+	sta selectedCOL  ;[0:1]		
+	lda coltbl,x
+	sta spriteX      ; sprite X position on screen
+	lda colbit,x
+	sta selected_bit  ; value of the current bit (0x80,0x40,...,0x01)
+	
+	;translate ROW to actual spot -> table
+	lda selectedCOL
+	beq regFromCOL0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 regFromCOL1:
-    lda cur_maxy_col1
-    clc    
+	lda cur_maxy_col1
+	clc	
     adc #1
-    sta selectedCOLH    
-    lda cursorY
-    cmp cur_maxy_col1 ; last Y index in this column  
+	sta selectedCOLH	
+	lda cursorY
+	cmp cur_maxy_col1 ; last Y index in this column  
     bpl clampY1
-    ldx cursorY
+	ldx cursorY
     jmp noclampY1
 clampY1:
     ldx cur_maxy_col1; last Y index in this column  
-    stx cursorY
-noclampY1:    
-    txa
-    tay
-    lda cur_reg
-    sta prev_reg    
-    lda (cur_row_to_reg_col1),y
-    sta cur_reg        
+	stx cursorY
+noclampY1:	
+	txa
+	tay
+	lda cur_reg
+	sta prev_reg	
+	lda (cur_row_to_reg_col1),y
+	sta cur_reg		
     lda cur_set
-    bne rowtbl1_store_alternate
+	bne rowtbl1_store_alternate
 rowtbl1_store_main:
-    lda RP2A03_rowtbl1,x
-    sta spriteY    
+	lda RP2A03_rowtbl1,x
+	sta spriteY	
     rts
 rowtbl1_store_alternate:
-    lda ALTERNATE_rowtbl1,x
-    sta spriteY    
+	lda ALTERNATE_rowtbl1,x
+	sta spriteY	
     rts
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
 regFromCOL0
-    lda cur_maxy_col0
-    clc    
+	lda cur_maxy_col0
+	clc	
     adc #1
-    sta selectedCOLH
-    lda cursorY
-    cmp cur_maxy_col0  ; last Y index in this column  
+	sta selectedCOLH
+	lda cursorY
+	cmp cur_maxy_col0  ; last Y index in this column  
     bpl clampY0
-    ldx cursorY
+	ldx cursorY
     jmp noclampY0
 clampY0:
     ldx cur_maxy_col0; last Y index in this column  
-    stx cursorY
-noclampY0:    
-    txa
-    tay    
-    lda cur_reg
-    sta prev_reg
-    lda (cur_row_to_reg_col0),y
-    sta cur_reg
+	stx cursorY
+noclampY0:	
+	txa
+	tay	
+	lda cur_reg
+	sta prev_reg
+	lda (cur_row_to_reg_col0),y
+	sta cur_reg
     lda cur_set
-    bne rowtbl0_store_alternate
+	bne rowtbl0_store_alternate
 rowtbl0_store_main:
-    lda RP2A03_rowtbl0,x
-    sta spriteY    
+	lda RP2A03_rowtbl0,x
+	sta spriteY	
     rts
 rowtbl0_store_alternate:
-    lda ALTERNATE_rowtbl0,x
-    sta spriteY    
+	lda ALTERNATE_rowtbl0,x
+	sta spriteY	
     rts
    
